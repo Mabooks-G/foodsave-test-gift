@@ -12,25 +12,27 @@ const router = express.Router();
 
 /**
  * GET /api/communication/:donationid
- * Fetch all chat messages for a given donation
+ * Return chat as an array of { sender, receiver, text, timestamp }
  */
 router.get("/:donationid", async (req, res) => {
   const { donationid } = req.params;
 
   try {
     const client = await pool.connect();
-    const query = `
+    const result = await client.query(
+      `
       SELECT senderid, receiverid, chathistory AS text, message_timestamp
       FROM chatdb
       WHERE donationid = $1
       ORDER BY message_timestamp ASC
-    `;
-    const result = await client.query(query, [donationid]);
+      `,
+      [donationid]
+    );
     client.release();
 
     const messages = result.rows.map((row) => ({
-      senderid: row.senderid,
-      receiverid: row.receiverid,
+      sender: row.senderid,
+      receiver: row.receiverid,
       text: row.text,
       timestamp: row.message_timestamp,
     }));
@@ -45,7 +47,6 @@ router.get("/:donationid", async (req, res) => {
 /**
  * POST /api/communication/:donationid
  * Body: { senderid, receiverid, text }
- * Insert a new chat message into chatdb
  */
 router.post("/:donationid", async (req, res) => {
   const { donationid } = req.params;
@@ -57,15 +58,25 @@ router.post("/:donationid", async (req, res) => {
 
   try {
     const client = await pool.connect();
-    const query = `
+    const result = await client.query(
+      `
       INSERT INTO chatdb (donationid, senderid, receiverid, chathistory, message_timestamp)
       VALUES ($1, $2, $3, $4, NOW())
       RETURNING senderid, receiverid, chathistory AS text, message_timestamp
-    `;
-    const result = await client.query(query, [donationid, senderid, receiverid, text]);
+      `,
+      [donationid, senderid, receiverid, text]
+    );
     client.release();
 
-    res.json({ message: result.rows[0] });
+    // Return updated chat array
+    res.json({
+      message: {
+        sender: result.rows[0].senderid,
+        receiver: result.rows[0].receiverid,
+        text: result.rows[0].text,
+        timestamp: result.rows[0].message_timestamp,
+      },
+    });
   } catch (err) {
     console.error("Error inserting chat:", err);
     res.status(500).json({ error: "Database insert error" });
@@ -73,6 +84,3 @@ router.post("/:donationid", async (req, res) => {
 });
 
 export default router;
-
-
-
