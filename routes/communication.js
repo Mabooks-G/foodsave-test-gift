@@ -12,64 +12,67 @@ const router = express.Router();
 
 /**
  * GET /api/communication/:donationid
- * Returns messages for a donation (ordered by timestamp)
+ * Fetch all chat messages for a given donation
  */
 router.get("/:donationid", async (req, res) => {
   const { donationid } = req.params;
+
   try {
     const client = await pool.connect();
-    const q = `
+    const query = `
       SELECT senderid, receiverid, chathistory AS text, message_timestamp
       FROM chatdb
       WHERE donationid = $1
       ORDER BY message_timestamp ASC
     `;
-    const result = await client.query(q, [donationid]);
+    const result = await client.query(query, [donationid]);
     client.release();
 
-    const messages = result.rows.map((r) => ({
-      senderid: r.senderid,
-      receiverid: r.receiverid,
-      text: r.text,
-      timestamp: r.message_timestamp,
+    const messages = result.rows.map((row) => ({
+      senderid: row.senderid,
+      receiverid: row.receiverid,
+      text: row.text,
+      timestamp: row.message_timestamp,
     }));
 
-    return res.json({ messages });
+    res.json({ messages });
   } catch (err) {
     console.error("Error fetching chats:", err);
-    return res.status(500).json({ error: "Database error" });
+    res.status(500).json({ error: "Database error while fetching chats" });
   }
 });
 
 /**
  * POST /api/communication/:donationid
  * Body: { senderid, receiverid, text }
+ * Insert a new chat message into chatdb
  */
 router.post("/:donationid", async (req, res) => {
   const { donationid } = req.params;
   const { senderid, receiverid, text } = req.body;
 
-  if (!text || !senderid || !receiverid) {
+  if (!senderid || !receiverid || !text) {
     return res.status(400).json({ error: "Missing required fields" });
   }
 
   try {
     const client = await pool.connect();
-    const q = `
+    const query = `
       INSERT INTO chatdb (donationid, senderid, receiverid, chathistory, message_timestamp)
       VALUES ($1, $2, $3, $4, NOW())
       RETURNING senderid, receiverid, chathistory AS text, message_timestamp
     `;
-    const result = await client.query(q, [donationid, senderid, receiverid, text]);
+    const result = await client.query(query, [donationid, senderid, receiverid, text]);
     client.release();
 
-    return res.json({ message: result.rows[0] });
+    res.json({ message: result.rows[0] });
   } catch (err) {
     console.error("Error inserting chat:", err);
-    return res.status(500).json({ error: "Database insert error" });
+    res.status(500).json({ error: "Database insert error" });
   }
 });
 
 export default router;
+
 
 
