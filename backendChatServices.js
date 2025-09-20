@@ -249,6 +249,11 @@ router.post('/getUserChats', async (req, res) => {
 });
 
 // ----------------------------
+// Get Socket.IO instance
+// ----------------------------
+const getIO = (req) => req.app.get("io");
+
+// ----------------------------
 // Add new message
 // ----------------------------
 router.post('/updateChatHistory', async (req, res) => {
@@ -265,6 +270,11 @@ router.post('/updateChatHistory', async (req, res) => {
       .single();
 
     if (error) throw error;
+
+    // Emit newMessage event via socket if available
+    const io = getIO(req);
+    if (io) io.emit('newMessage', data);
+
     res.json(data);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -276,26 +286,63 @@ router.post('/updateChatHistory', async (req, res) => {
 // ----------------------------
 router.post('/markChatRead', async (req, res) => {
   try {
-    const { chatid, email, donationid } = req.body;
-    if (!email || (!chatid && !donationid)) return res.status(400).json({ error: 'Missing email or chatid/donationid' });
+    const { donationid, currentUserId } = req.body;
+    if (!donationid || !currentUserId) {
+      return res.status(400).json({ error: 'Missing donationid or currentUserId' });
+    }
 
-    const { data: stakeholderData } = await supabase
-      .from('stakeholderdb')
-      .select('stakeholderid')
-      .eq('email', email)
-      .single();
+    const { data, error } = await supabase
+      .from('chatdb')
+      .update({ readreceipts: true })
+      .eq('donationid', donationid)
+      .neq('senderid', currentUserId)
+      .select();   // ✅ returns all rows updated
 
-    if (!stakeholderData) return res.status(404).json({ error: 'User not found' });
+    if (error) throw error;
 
-    let query = supabase.from('chatdb').update({ readreceipts: true });
-    if (donationid) query = query.eq('donationid', donationid);
-    else query = query.eq('chatid', chatid);
+    // Emit read event via socket
+    const io = getIO(req);
+    if (io) io.emit('messageRead', { donationid, senderId: currentUserId });
 
-    await query;
-    res.json({ success: true });
+    res.json({ success: true, updated: data });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
+
+// ----------------------------
+// Mark all messages as delivered for a donation and recipient
+// ----------------------------
+router.post('/markDelivered', async (req, res) => {
+  try {
+    const { donationid, userId } = req.body;
+    if (!donationid || !userId) {
+      return res.status(400).json({ error: 'Missing donationid or userId' });
+    }
+
+    // Update all messages for this donation where recipient is the user
+    const { data, error } = await supabase
+      .from('chatdb')
+      .update({ delivered: true })
+      .eq('donationid', donationid)
+      .neq('senderid', userId) // only mark messages **not sent by this user**
+      .select(); // returns updated rows
+
+    if (error) throw error;
+
+    // Emit messageDelivered event for each updated chat
+    const io = getIO(req);
+    if (io && data?.length) {
+      data.forEach(chat => {
+        io.emit('messageDelivered', { chatid: chat.chatid, donationid, recipientId: userId });
+      });
+    }
+
+    res.json({ success: true, updated: data });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 
 export default router;

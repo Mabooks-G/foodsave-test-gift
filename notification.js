@@ -40,7 +40,7 @@ router.get("/", ensureLoggedIn, async (req, res) => {
   
   try {
     const result = await pool.query(
-  "SELECT fooditemid, name, expirydate, quantity FROM fooditemdb WHERE stakeholderid = $1 ORDER BY fooditemid ASC",
+  "SELECT fooditemid, name, expirydate, quantity, \"notificationRead\" FROM fooditemdb WHERE stakeholderid = $1 ORDER BY fooditemid ASC",
   //"SELECT fooditemid, name, expirydate, quantity FROM fooditemdb WHERE stakeholderid = $1 AND \"notificationRead\" = false ORDER BY fooditemid ASC",
   [stakeholderID]
 );
@@ -64,7 +64,7 @@ router.get("/", ensureLoggedIn, async (req, res) => {
         expiryStatus,
         status,
         diffDays, // add this field
-       // notificationRead: item.notificationRead // ✅ add this
+        notificationRead: item.notificationRead // ✅ add this
       };
     }).filter(item => item.diffDays <= 2); // ✅ only items expiring in 2 days
 
