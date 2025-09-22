@@ -258,14 +258,31 @@ const getIO = (req) => req.app.get("io");
 // ----------------------------
 router.post('/updateChatHistory', async (req, res) => {
   try {
-    const { donationid, senderid, message } = req.body;
-    if (!donationid || !senderid || message == null) return res.status(400).json({ error: 'Missing params' });
+    console.log('Received body:', req.body);
+    
+    // CHANGE THESE PARAMETER NAMES TO MATCH FRONTEND
+    const { donationid, senderid, chathistory, iv, message_timestamp } = req.body;
+    
+    // UPDATE VALIDATION TO MATCH NEW PARAMETERS
+    if (!donationid || !senderid || !chathistory || !iv) {
+      return res.status(400).json({ error: 'Missing params' });
+    }
 
     const icon = emojiForId(donationid);
-
+    
+    // USE THE CORRECT PARAMETER NAMES IN THE DATABASE INSERT
     const { data, error } = await supabase
       .from('chatdb')
-      .insert([{ donationid, senderid, message_timestamp: new Date().toISOString(), chathistory: message, icon, readreceipts: false, delivered: false }])
+      .insert([{ 
+        donationid, 
+        senderid, 
+        message_timestamp: message_timestamp || new Date().toISOString(), // Use provided timestamp or current
+        chathistory: chathistory, // Use chathistory instead of message
+        iv: iv, // Store the IV in the database
+        icon, 
+        readreceipts: false, 
+        delivered: false 
+      }])
       .select()
       .single();
 
@@ -277,6 +294,7 @@ router.post('/updateChatHistory', async (req, res) => {
 
     res.json(data);
   } catch (err) {
+    console.error('updateChatHistory error:', err);
     res.status(500).json({ error: err.message });
   }
 });
@@ -346,3 +364,4 @@ router.post('/markDelivered', async (req, res) => {
 
 
 export default router;
+
