@@ -236,6 +236,7 @@ router.post('/getUserChats', async (req, res) => {
         message_timestamp: msg.message_timestamp || msg.timestamp,
         chathistory: msg.chathistory,
         icon: msg.icon,
+        iv: msg.iv,
         readreceipts: msg.readreceipts,
         delivered: msg.delivered,
         isOutgoing,
@@ -364,5 +365,6 @@ router.post('/markDelivered', async (req, res) => {
 
 
 export default router;
+
 
 
