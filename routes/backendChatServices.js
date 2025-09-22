@@ -241,7 +241,7 @@ router.post('/getUserChats', async (req, res) => {
         isOutgoing,
       };
     });
-
+  console.log('Sending chats to frontend:', formatted);
     res.json(formatted);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -364,4 +364,5 @@ router.post('/markDelivered', async (req, res) => {
 
 
 export default router;
+
 
