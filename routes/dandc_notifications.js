@@ -4,7 +4,7 @@ import { getStakeholderIdFromEmail } from './backendChatServices.js';
 import nodemailer from 'nodemailer';
 
 const router = express.Router();
-FRONTEND_URL=process.env.FRONTEND_URL
+FRONTEND_URL=process.env.FRONTEND_URL;
 /* Author: Lethabo Mazui
    Event: Sprint 2
    LatestUpdate: The UI - trying to make it look pretty is hard
