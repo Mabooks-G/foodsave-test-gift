@@ -4,7 +4,7 @@ import { getStakeholderIdFromEmail } from './backendChatServices.js';
 import nodemailer from 'nodemailer';
 
 const router = express.Router();
-
+FRONTEND_URL=process.env.FRONTEND_URL
 /* Author: Lethabo Mazui
    Event: Sprint 2
    LatestUpdate: The UI - trying to make it look pretty is hard
@@ -74,7 +74,7 @@ const composePendingEmail = (userName, pendingDonations) => {
         </tbody>
       </table>
       <p style="text-align:center;">
-        <a href="http://localhost:3000/donations" style="display:inline-block; padding:10px 20px; background-color:#C8A2C8; color:#fff; text-decoration:none; border-radius:5px;">Go to Donations</a>
+        <a href="${FRONTEND_URL}/donations" style="display:inline-block; padding:10px 20px; background-color:#C8A2C8; color:#fff; text-decoration:none; border-radius:5px;">Go to Donations</a>
       </p>
       <p style="text-align:center;">Thank you.</p>
     </div>
@@ -107,7 +107,7 @@ const composeApprovedEmail = (userName, approvedDonations) => {
         </tbody>
       </table>
       <p style="text-align:center;">
-        <a href="http://localhost:3000/communication" style="display:inline-block; padding:10px 20px; background-color:#C8A2C8; color:#fff; text-decoration:none; border-radius:5px;">Go to Chats</a>
+        <a href="${FRONTEND_URL}/communication" style="display:inline-block; padding:10px 20px; background-color:#C8A2C8; color:#fff; text-decoration:none; border-radius:5px;">Go to Chats</a>
       </p>
       <p style="text-align:center;">Thank you.</p>
     </div>
