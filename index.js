@@ -1,49 +1,44 @@
+/* Event: Sprint 1
+   LatestUpdate: 2025/09/21
+   Description: Main server entry point with API route configuration
+*/
+
 import express from "express";
-import cors from "cors"; // ← YOU STILL NEED THIS IMPORT!
+import cors from "cors";
 import dotenv from "dotenv";
 import authRoutes from "./routes/auth.js";
 import notificationRoutes from "./routes/notification.js";
-import usersRoutes from "./routes/users.js";
+
+import usersRoutes from "./routes/users.js"; // NEW
 import bulkUploadRoutes from "./routes/bulkUpload.js";
-import chatServices from './routes/backendChatServices.js';
-import communicationRoutes from "./routes/communication.js";
+import chatService from "./routes/backendChatServices.js"; // NEW
+import DandCnotifications from "./routes/dandc_notifications.js"; // NEW
+
 
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// SIMPLE CORS FIX - Just this one line (but you need the import above!)
-app.use(cors()); // ← This allows ALL origins
+// Configure CORS for frontend communication
+const FRONTEND_URL = "http://localhost:3000";
+app.use(cors({ origin: FRONTEND_URL, credentials: true }));
+app.use(express.json());// Parse JSON request bodies
 
-app.use(express.json());
-
-// Your routes
+// API routes
 app.use("/api/auth", authRoutes);
 app.use("/api/notifications", notificationRoutes);
-app.use("/api/users", usersRoutes);
+app.use("/api/users", usersRoutes); // NEW
 app.use("/api/bulkupload", bulkUploadRoutes);
-app.use('/supabase', chatServices);
-app.use("/api/communication", communicationRoutes);
+app.use("/supabase", chatService); // NEW
+app.use("/api/dandc_notifications", DandCnotifications);
 
+// Root endpoint for health check
 app.get("/", (req, res) => {
-  res.send("Server is running! CORS configured for development");
-});
-
-// Health check endpoint
-app.get("/health", (req, res) => {
-  res.json({ 
-    status: "OK", 
-    timestamp: new Date().toISOString(),
-    message: "CORS allows all origins for development"
-  });
+  res.send("Server is running! Users routes active at /api/users");
 });
 
 // Start server
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`Server running on port ${PORT}`);
-  console.log(`CORS configured: ALL origins allowed (development mode)`);
 });
-
-
-

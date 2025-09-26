@@ -3,6 +3,10 @@
    LatestUpdate: Established User Login and Registration, Added Capacity Field
    Description: Processes User requests for Login and Registration
    Returns: A result JSON file
+   Event: Sprint 1: User Authentication
+   LatestUpdate: Added Login and Registration Routes
+   Description: Handles stakeholder registration and login
+   Returns: JSON responses indicating success or failure
 */
 
 import express from "express";
@@ -13,9 +17,22 @@ const router = express.Router();
 
 // In-memory store of logged-in users
 // Key: email, Value: user object { stakeholderID, name, email, region, capacity }
+/* Author: Bethlehem Shimelis
+   Event: Sprint 1: User Authentication
+   LatestUpdate: Added In-Memory Store for Logged-in Users
+   Description: Stores logged-in users in memory for session access
+   Returns: N/A
+*/
 const loggedInUsers = {};
+// Key: email, Value: user object { stakeholderID, name, email, region, capacity }
 
 // Helper: map account type to prefix
+/* Author: Bethlehem Shimelis
+   Event: Sprint 1: User Authentication
+   LatestUpdate: Added Prefix Mapping
+   Description: Maps account type to a stakeholderID prefix
+   Returns: String prefix ('h', 'b', 'c')
+*/
 function getPrefix(accountType) {
   if (accountType.toLowerCase().includes("household")) return "h";
   if (accountType.toLowerCase().includes("business")) return "b";
@@ -24,6 +41,12 @@ function getPrefix(accountType) {
 }
 
 // REGISTER
+/* Author: Bethlehem Shimelis
+   Event: Sprint 1: User Registration
+   LatestUpdate: Handles Password Hashing and StakeholderID Generation
+   Description: Registers a new stakeholder account
+   Returns: JSON with success message and user details or error
+*/
 router.post("/register", async (req, res) => {
   const { accountType, name, email, region, password, capacity } = req.body;
 
@@ -43,20 +66,15 @@ router.post("/register", async (req, res) => {
 
     // generate stakeholderID
     const prefix = getPrefix(accountType);
-
-    // FIX: order by numeric part of stakeholderID
     const maxIdResult = await pool.query(
-      `SELECT stakeholderID
-       FROM stakeholderDB
-       WHERE stakeholderID LIKE $1
-       ORDER BY CAST(SUBSTRING(stakeholderID FROM 2) AS INTEGER) DESC
-       LIMIT 1`,
+      "SELECT stakeholderID FROM stakeholderDB WHERE stakeholderID LIKE $1 ORDER BY stakeholderID DESC LIMIT 1",
       [`${prefix}%`]
     );
 
     let newNumber = 0;
     if (maxIdResult.rows.length > 0) {
       const lastId = maxIdResult.rows[0].stakeholderid; // e.g. "c23"
+      const lastId = maxIdResult.rows[0].stakeholderid; // e.g. "h23"
       const lastNum = parseInt(lastId.slice(1), 10);
       newNumber = lastNum + 1;
     }
@@ -88,11 +106,16 @@ router.post("/register", async (req, res) => {
   }
 });
 
-// LOGIN
+/* Author: Bethlehem Shimelis
+   Event: Sprint 1: User Login
+   LatestUpdate: Added Password Verification and Session Storage
+   Description: Authenticates a stakeholder and stores session in memory
+   Returns: JSON with success message and user details or error
+*/
 router.post("/login", async (req, res) => {
   const { email, password } = req.body;
 
-  try {
+  try { // extracts user ID from email
     const userQuery = await pool.query(
       "SELECT * FROM stakeholderDB WHERE email=$1",
       [email]
@@ -108,7 +131,7 @@ router.post("/login", async (req, res) => {
       return res.status(400).json({ error: "Invalid credentials" });
     }
 
-    // Save user in memory for later access in users.js
+    // Save user in memory for later access
     loggedInUsers[email] = {
       stakeholderID: user.stakeholderid,
       name: user.name,
@@ -117,7 +140,6 @@ router.post("/login", async (req, res) => {
       capacity: user.capacity,
     };
 
-    // return only safe fields
     res.json({
       message: "Login successful",
       user: loggedInUsers[email],
@@ -128,10 +150,14 @@ router.post("/login", async (req, res) => {
   }
 });
 
-// Helper function to get a logged-in user by email
+/* Author: Bethlehem Shimelis
+   Event: Sprint 1: User Session Access
+   LatestUpdate: Added Getter for Logged-In Users
+   Description: Retrieves a logged-in user from the in-memory store
+   Returns: User object if exists, undefined otherwise
+*/
 export function getLoggedInUser(email) {
   return loggedInUsers[email];
 }
 
 export default router;
-
