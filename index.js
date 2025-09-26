@@ -22,6 +22,7 @@ const PORT = process.env.PORT || 5000;
 
 // Configure CORS for frontend communication
 const FRONTEND_URL = process.env.FRONTEND_URL;
+console.log("CORS allowed origin:", FRONTEND_URL);
 
 app.use(cors({ origin: FRONTEND_URL, credentials: true }));
 app.use(express.json());// Parse JSON request bodies
