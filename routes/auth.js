@@ -1,8 +1,4 @@
 /* Author: Bethlehem Shimelis
-   Event: Sprint 1: Manually Input Food Items with Expiry dates
-   LatestUpdate: Established User Login and Registration, Added Capacity Field
-   Description: Processes User requests for Login and Registration
-   Returns: A result JSON file
    Event: Sprint 1: User Authentication
    LatestUpdate: Added Login and Registration Routes
    Description: Handles stakeholder registration and login
@@ -15,8 +11,6 @@ import pool from "../db.js";
 
 const router = express.Router();
 
-// In-memory store of logged-in users
-// Key: email, Value: user object { stakeholderID, name, email, region, capacity }
 /* Author: Bethlehem Shimelis
    Event: Sprint 1: User Authentication
    LatestUpdate: Added In-Memory Store for Logged-in Users
@@ -26,7 +20,6 @@ const router = express.Router();
 const loggedInUsers = {};
 // Key: email, Value: user object { stakeholderID, name, email, region, capacity }
 
-// Helper: map account type to prefix
 /* Author: Bethlehem Shimelis
    Event: Sprint 1: User Authentication
    LatestUpdate: Added Prefix Mapping
@@ -40,7 +33,6 @@ function getPrefix(accountType) {
   throw new Error("Invalid account type");
 }
 
-// REGISTER
 /* Author: Bethlehem Shimelis
    Event: Sprint 1: User Registration
    LatestUpdate: Handles Password Hashing and StakeholderID Generation
@@ -73,7 +65,6 @@ router.post("/register", async (req, res) => {
 
     let newNumber = 0;
     if (maxIdResult.rows.length > 0) {
-      const lastId = maxIdResult.rows[0].stakeholderid; // e.g. "c23"
       const lastId = maxIdResult.rows[0].stakeholderid; // e.g. "h23"
       const lastNum = parseInt(lastId.slice(1), 10);
       newNumber = lastNum + 1;
