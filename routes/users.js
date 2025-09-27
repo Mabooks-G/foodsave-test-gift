@@ -15,7 +15,7 @@ const router = express.Router();
    Event: Sprint 1: Authentication Middleware
    LatestUpdate: Added ensureLoggedIn middleware
    Description: Ensures a user is logged in before accessing food item routes
-   Returns: Attaches user info to req.user if authenticated, else returns 401
+   Returns: Attaches user info to req.user if authenticated, else returns 401.
 */
 function ensureLoggedIn(req, res, next) {
   // check for email
